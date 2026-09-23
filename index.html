@@ -47,7 +47,7 @@
     </div>
   </div>
 
-  <script>
+ <script>
     let apiKey = localStorage.getItem('gemini_pwa_key') || '';
     let chatHistory = [];
 
@@ -68,7 +68,7 @@
         apiKey = val;
         localStorage.setItem('gemini_pwa_key', apiKey);
         toggleModal();
-        addMessage('bot', 'Chiave API salvata con successo! Inizia pure a scrivermi.');
+        addMessage('bot', 'Chiave API salvata con successo!');
       }
     }
 
@@ -85,7 +85,7 @@
       const input = document.getElementById('userInput');
       const text = input.value.trim();
       if (!text) return;
-      if (!apiKey) { alert('Inserisci prima la tua API Key nelle impostazioni (⚙️)!'); toggleModal(); return; }
+      if (!apiKey) { alert('Inserisci la tua API Key nelle impostazioni!'); toggleModal(); return; }
 
       addMessage('user', text);
       input.value = '';
@@ -97,18 +97,25 @@
       document.getElementById('chat').appendChild(loadingDiv);
 
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: chatHistory })
         });
+
         const data = await res.json();
+
+        if (data.error) {
+          loadingDiv.innerText = `[Errore Google ${data.error.code}]: ${data.error.message}`;
+          return;
+        }
+
         const reply = data.candidates[0].content.parts[0].text;
-        
         loadingDiv.innerText = reply;
         chatHistory.push({ role: 'model', parts: [{ text: reply }] });
+
       } catch (err) {
-        loadingDiv.innerText = 'Errore durante la connessione. Verifica la tua API Key.';
+        loadingDiv.innerText = `[Errore di Rete]: ${err.message}`;
       }
     }
   </script>
